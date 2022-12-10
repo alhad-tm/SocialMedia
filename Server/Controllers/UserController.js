@@ -1,4 +1,6 @@
 import UserModel from "../Models/userModel.js";
+import bcrypt from "bcrypt"
+import res from "express/lib/response.js";
 
 //get a user
 export const getUser = async (req, res) => {
@@ -25,13 +27,107 @@ export const updateUser = async (req, res) => {
   const { currentUserId, currentUserAdminStatus, password } = req.body;
 
   if (id === currentUserId || currentUserAdminStatus) {
+
     try {
+        
+        if(password){
+            const salt= await bcrypt.genSalt(10);
+            req.body.password=await bcrypt.hash(password,salt)
+        }
+ 
       const user = await UserModel.findByIdAndUpdate(id, req.body, {
         new: true,
       });
       res.status(200).json(user);
-    } catch (error) {
+    } catch (error) { 
       res.status(500).json(error);
     }
   }
-};
+  else{
+    res.status(403).json("access denied,u can only update ur own profile");
+  }
+}; 
+
+// Delete user
+
+export const deleteUser = async(req,res)=>{
+  const id= req.params.id
+
+  const{currentUserId,currentUserAdminStatus}=req.body
+
+  if(id===currentUserId || currentUserAdminStatus){
+    try {
+      await UserModel.findByIdAndDelete(id)
+      res.status(200).json("user deleted sucessfully")
+      
+    } catch (error) {
+      res.status(500).json(error)
+    }
+  }
+  else{
+    res.status(403).json("access denied,u can only delete ur own profile");
+  }
+}
+
+//follow a user
+
+export const followUser= async (req,res)=>{
+  const id= req.params.id
+
+  const {currentUserId}=req.body
+
+  if(currentUserId===id){
+    res.status(403).json(" action forbidden")
+}
+else{
+  try {
+    const followUser=await UserModel.findById(id)
+    const followingUser=await UserModel.findById(currentUserId) 
+
+    if(!followUser.followers.includes(currentUserId))
+    {
+      await followUser.updateOne({$push:{followers:currentUserId}})
+      await followingUser.updateOne({$push:{following:id}})
+      res.status(200).json("user followed")
+    }
+    else{
+      res.status(403).json("U already followed")
+    }
+    
+  } catch (error) {
+    res.status(500).json(error)
+  }
+}
+}
+
+
+// unfollow a user
+
+export const unFollowUser= async (req,res)=>{
+  const id= req.params.id
+
+  const {currentUserId}=req.body
+
+  if(currentUserId===id){
+    res.status(403).json(" action forbidden")
+}
+else{
+  try {
+    const followUser=await UserModel.findById(id)
+    const followingUser=await UserModel.findById(currentUserId) 
+
+    if(followUser.followers.includes(currentUserId))
+    {
+      await followUser.updateOne({$pull:{followers:currentUserId}})
+      await followingUser.updateOne({$pull:{following:id}})
+      res.status(200).json("user unfollowed")
+    }
+    else{
+      res.status(403).json("User not followed by u")
+    }
+    
+  } catch (error) {
+    res.status(500).json(error)
+  }
+}
+}
