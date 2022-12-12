@@ -4,23 +4,23 @@ const UserSchema= mongoose.Schema(
     {
         username:{
             type:String,
-            required:true
+            required:true,
         },
         password:{
             type:String,
-            required:true
+            required:true,
         },
         firstname:{
             type:String,
-            required:true
+            required:true,
         },
         lastname:{
             type:String,
-            required:true 
+            required:true ,
         },
         isAdmin:{
             type:Boolean, 
-            default:false
+            default:false,
         },
         profilePicture:String,
         coverPicture:String,
@@ -34,4 +34,4 @@ const UserSchema= mongoose.Schema(
     {timestamps:true}
 )
 const UserModel = mongoose.model("Users",UserSchema)
-export default UserModel
+export default UserModel;
